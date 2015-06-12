@@ -55,7 +55,7 @@ func (d *demofile) readSignOn() {
 	// Nothing to do, just seek
 	d.f.Seek(int64(d.header.Signonlength), 1)
 }
-func (d *demofile) GetTick() {
+func (d *demofile) GetFrame() {
 	buf := make([]byte, 1)
 	_, err := d.f.Read(buf)
 	if err != nil {
