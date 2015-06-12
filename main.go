@@ -7,10 +7,21 @@ import (
 	"log"
 	"os"
 )
+import unsafe "unsafe"
 
 const (
-	MAX_OSPATH     = 260
-	DEMO_HEADER_ID = "HL2DEMO"
+	MAX_OSPATH       = 260
+	DEMO_HEADER_ID   = "HL2DEMO"
+	DEM_SIGNON       = 1
+	DEM_PACKET       = 2
+	DEM_SYNCTICK     = 3
+	DEM_CONSOLECMD   = 4
+	DEM_USERCMD      = 5
+	DEM_DATATABLES   = 6
+	DEM_STOP         = 7
+	DEM_CUSTOMDATA   = 8
+	DEM_STRINGTABLES = 9
+	DEM_LASTCOMMAND  = 9
 )
 
 type demoheader struct {
@@ -27,7 +38,9 @@ type demoheader struct {
 	Signonlength    int32
 }
 type demofile struct {
+	f      *os.File
 	header demoheader
+	tick   int32
 }
 
 func (d *demofile) PrintInfo() {
@@ -38,15 +51,46 @@ func (d *demofile) PrintInfo() {
 	fmt.Printf("Playback time: %f seconds\n", d.header.Playback_time)
 	fmt.Printf("Server Name: %s\n", d.header.Servername)
 }
-
+func (d *demofile) readSignOn() {
+	// Nothing to do, just seek
+	d.f.Seek(int64(d.header.Signonlength), 1)
+}
+func (d *demofile) GetTick() {
+	buf := make([]byte, 1)
+	_, err := d.f.Read(buf)
+	if err != nil {
+		panic(err)
+	}
+	switch int(buf[0]) {
+	case DEM_SIGNON:
+		d.readSignOn()
+	case DEM_PACKET:
+		// handle packet
+	case DEM_SYNCTICK:
+		// handle synctick
+	case DEM_CONSOLECMD:
+		// handle consolecommand
+	case DEM_USERCMD:
+		// handle usercommand
+	case DEM_DATATABLES:
+		// handle datatables
+	case DEM_STOP:
+		// handle stop
+	case DEM_CUSTOMDATA:
+		// handle customdata
+	case DEM_STRINGTABLES:
+		// handle stringtables
+	}
+}
 func (d *demofile) Open(path string) {
 	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
+	d.f = f
 	d.header = demoheader{}
 	// Read the header from the .dem
-	buf := make([]byte, 4096)
+	buf := make([]byte, unsafe.Sizeof(d.header))
 	_, err = f.Read(buf)
 	if err != nil {
 		panic(err)
